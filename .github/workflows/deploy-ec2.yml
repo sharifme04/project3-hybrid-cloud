@@ -1,0 +1,52 @@
+name: Deploy EC2 Components (Admin + WebSocket)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'admin-frontend/**'
+      - 'websocket-server/**'
+
+jobs:
+  deploy-ec2:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Build admin frontend
+        working-directory: ./admin-frontend
+        run: |
+          npm install
+          npm run build
+        env:
+          VITE_API_URL: https://no0gsx5di6.execute-api.us-east-1.amazonaws.com/prod
+          VITE_WS_URL: ws://54.145.25.171:3003
+      
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/project3-hybrid-cloud
+            git pull origin main
+            
+            # Update WebSocket server
+            cd websocket-server
+            npm install
+            pm2 restart ws-server
+            
+            # Update Admin frontend
+            cd ../admin-frontend
+            npm install
+            npm run build
+            
+            sudo systemctl reload nginx

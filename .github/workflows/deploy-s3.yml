@@ -1,15 +1,14 @@
-name: Deploy EC2 Components
+name: Deploy Public Frontend to S3
 on:
   push:
     branches: [ main ]
     paths:
-      - 'admin-frontend/**'
-      - 'websocket-server/**'
+      - 'public-frontend/**'
 jobs:
-  deploy-ec2:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to EC2
+      - name: Deploy via EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -17,11 +16,9 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            cd ~/project3-hybrid-cloud
+            cd ~/project3-hybrid-cloud/public-frontend
             git pull origin main
-            cd websocket-server && npm install && pm2 restart ws-server
-            cd ../admin-frontend
             rm -rf node_modules package-lock.json
             npm install
-            VITE_WS_URL=ws://54.145.25.171:3003 ./node_modules/.bin/vite build
-            sudo systemctl reload nginx
+            VITE_API_URL=https://no0gsx5di6.execute-api.us-east-1.amazonaws.com/prod ./node_modules/.bin/vite build
+            aws s3 sync dist/ s3://task-frontend-sharif/ --delete

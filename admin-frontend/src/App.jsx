@@ -62,7 +62,7 @@ export default function App() {
         </div>
       )}
 
-      <h2>All Uploads ({images.length})</h2>
+      <h2>All Uploads images ({images.length})</h2>
       <p style={{ color: '#888', fontSize: 13 }}>New uploads appear in real-time via WebSocket (no page refresh needed)</p>
       {images.length === 0 && <p style={{ color: '#aaa' }}>No uploads yet. Use the public upload page to upload an image.</p>}
       <ul style={{ listStyle: 'none', padding: 0 }}>
